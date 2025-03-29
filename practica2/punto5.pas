@@ -1,11 +1,13 @@
 
 Program punto5;
 
+
+
 { La Dirección de Población Vulnerable del Ministerio de Salud y Desarrollo
 Social solicita información a cada municipio indicando cantidad de niños y de adultos
 mayores que están en situación de riesgo debido a la situación socioeconómica del país.
 Para ello se recibe un archivo indicando: partido, localidad, barrio, cantidad de ninos
-y cantidad de adultos mayores. Se sabe que el archivo se encuentra ordenado por partido y localidad.
+y cantidad de adultos mayores. Se sabe que EL ARCHIVO SE ENCUENTRA ORDENADO POR PARTIDO Y LOCALIDAD.
  Se pide imprimir por pantalla con el formato que aparece en la consigna}
 
 Type 
@@ -22,12 +24,12 @@ Type
 Var 
   arch : tipoArch;
   r : registro;
-  cantNinosTotal : integer;
-  cantAdultosTotal : integer;
+  cantNinosTotalPartido : integer;
+  cantAdultosTotalPartido : integer;
   cantNinosLocalidad : integer;
   cantMayoresLocalidad : integer;
-  localidad :  integer;
-  partido : string[50];
+  localidadActual :  integer;
+  partidoActual : string[50];
 
 Begin
   assign(arch, 'archivo');
@@ -35,32 +37,43 @@ Begin
 
 
   read(arch, r);
-  localidad := r.localidad;
-  partido := r.partido;
-  cantNinosTotal := 0;
-  cantAdultosTotal := 0;
-
-
+  localidadActual := r.localidad;
+  partidoActual := r.partido;
   While (Not eof(arch)) Do
     Begin
-      While (r.partido = partido) Do
+      cantNinosTotalPartido := 0;
+      cantAdultosTotalPartido := 0;
+      While (PartidoActual = r.partido) Do
         Begin
           cantNinosLocalidad := 0;
           cantMayoresLocalidad := 0;
-          While (r.localidad = localidad) Do
+          While (localidadActual = r.localidad) Do
             Begin
               cantNinosLocalidad := cantNinosLocalidad + r.cantNinos;
               cantMayoresLocalidad := cantMayoresLocalidad + r.cantAdultos;
-              cantNinosTotal := cantNinosTotal+cantNinosLocalidad;
-              cantAdultosTotal := cantAdultosTotal+cantMayoresLocalidad;
-            {aca es donde puedo informar todo lo que tengo que informar}
-
-              read(arch,r);
-
+              read(arch, r);
+              If (eof(arch))Then
+                break;
             End;
+          If (eof(arch))Then
+            Begin
+              cantNinosLocalidad := cantNinosLocalidad + r.cantNinos;
+              cantMayoresLocalidad := cantMayoresLocalidad + r.cantAdultos;
+            End;
+          writeln('la localidad ', localidadActual ,' tiene tantos ninos',
+                  cantNinosLocalidad, ' y tiene tantos mayores ',
+                  cantMayoresLocalidad );
+          cantNinosTotalPartido := cantNinosTotalPartido + cantNinosLocalidad;
+          cantAdultosTotalPartido := cantAdultosTotalPartido +
+                                     cantMayoresLocalidad;
+          If (eof(arch))Then
+            break;
         End;
+      writeln('el partido '+ partidoActual ,' tiene tantos ninos ',
+              cantNinosTotalPartido,
+              ' y tantos mayores con problemas socioeconomicos ' ,
+              cantAdultosTotalPartido);
     End;
-
 
   close(arch);
 End.

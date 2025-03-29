@@ -2,11 +2,15 @@
 Program punto3;
 
 
+
 {realizar un proceso que reciba los 20 detalles y actualice el archivo maestro con la info de los detalle.
-tanto el maestro como el detalle se encuentran ordenados por codigo de calzado y el numero. ademas se debera
+TANTO EL MAESTRO COMO EL DETALLE SE ENCUENTRAN ORDENADOS POR CODIGO DE CALZADO Y EL NUMERO. ademas se debera
 informar que calzados no tuvieron ventas y cuales quedaron por debajo del stock minimo. los calzados sin venta
 se informan por pantalla, mientras que los calzados que quedaron por debajo del stock minimo se informan en 
 un archivo txt llamado calzadosinstock.txt. NO SE REALIZAN CUENTAS SI NO SE POSEE STOCK}
+
+Const 
+  valorAlto = 32000;
 
 Type 
 
@@ -28,63 +32,106 @@ Type
 
   tipoArchMaestro = file Of calzado;
   tipoArchDetalle = file Of detalle;
+  adetalles = array[1..20] Of tipoArchDetalle;
+  rdetalles = array[1..20] Of detalle;
 
 Var 
   archMaestro : tipoArchMaestro;
-  archDetalle : tipoArchDetalle;
-  c : calzado;
-  d : detalle;
-  txt : TextFile;
+  rmaestro : calzado;
+  vectoraDetalles : adetalles;
+  vectorrDetalles : rdetalles;
+  min : detalle;
 
-Procedure actualizarArchMaestro(Var archMaestro : tipoArchMaestro;  Var
-                                archDetalle : tipoArchDetalle; Var txt: TextFile
-);
+  calzadosinstocktxt : TextFile;
+
+  i: integer;
+  numero : string[3];
+
+Procedure leer(Var adetalle : tipoArchDetalle ; Var rdetalle : detalle);
 Begin
-
-
-{tengo el archivo detalle para leer y escribir y el archivo maestro para escribir}
-  While (Not eof(archDetalle)) Do
+  If (Not eof(adetalle))Then
     Begin
-      read(archDetalle, d);
-      read(archMaestro, c);
-      While (d.codigo <> c.codigo) Do
-        Begin
-          While (d.numero <> c.numero) Do
-            read(archMaestro,c);
-        End;
+      read(adetalle,rdetalle);
+    End
+  Else
+    Begin
+      rdetalle.codigo := valorAlto;
+    End;
+End;
+Procedure minimo(Var vectoraDetalles : adetalles ; Var vectorrDetalles :
+                 rdetalles ; Var min : detalle);
 
-
-{tengo el calzado con el mismo codigo y el mismo numero por lo que estoy listo para actualizar}
-      If (d.cantVendida = 0)Then
+Var 
+  posMin : integer;
+Begin
+  posMin := 1;
+  min := vectorrDetalles[1];
+  For i := 2 To 20 Do
+    Begin
+      If (vectorrDetalles[i].codigo < min.codigo)Then
         Begin
-          write('el calzado con el siguiente codigo no vendio nada: ');
-          writeln(d.codigo);
-        End
-      Else
-        Begin
-          If (c.stock-d.cantVendida >= 0)Then
-            Begin
-              c.stock := c.stock - d.cantVendida;
-              seek(archMaestro,FilePos(archMaestro)-1);
-              write(archMaestro,c);
-              If (c.stock-d.cantVendida < c.stockMin)Then
-                writeln(txt, c.descripcion);
-            End;
+          If (vectorrDetalles[i].numero < min.numero)Then
+            posMin := i;
+          min := vectorrDetalles[i];
         End;
     End;
-
+  leer(vectoraDetalles[posMin], vectorrDetalles[posMin]);
 End;
 Begin
-  assign(archMaestro, 'archivoMaestro');
-  assign(archDetalle, 'archivoDetalle');
-  assign(txt, 'calzadosinstock.txt');
-  reset(archDetalle);
-  rewrite(archMaestro);
-  rewrite(txt);
+  assign(archMaestro, 'archivoMaestro.dat');
+  For i:=1 To 20 Do
+    Begin
+      writeln('ingrese el numero del archivo detalle');
+      readln(numero);
+      assign(vectoraDetalles[i], 'archivoDetalle' + numero);
+    End;
+  reset(archMaestro);
+  rewrite(calzadosinstocktxt);
+  read(archMaestro,rmaestro);
+  For i := 1 To 20 Do
+    Begin
+      reset(vectoraDetalles[i]);
+      leer(vectoraDetalles[i],vectorrDetalles[i]);
+    End;
+  minimo(vectoraDetalles, vectorrDetalles, min);
+  While (min.codigo <> valorAlto) Do
+    Begin
+      While (min.codigo <> rmaestro.codigo) Do
+        Begin
+          writeln('el siguiente calzado no tuvo ventas' + rmaestro.descripcion);
+          read(archMaestro, rmaestro);
+        End;
+      While (min.codigo = rmaestro.codigo) Do
+        Begin
+          While (min.numero <> rmaestro.numero) Do
+            Begin
+              writeln('el siguiente calzado no tuvo ventas' + rmaestro.
+                      descripcion);
+              read(archMaestro, rmaestro);
+            End;
+          While (min.numero = rmaestro.numero) Do
+            Begin
 
-  actualizarArchMaestro(archMaestro, archDetalle, txt);
+  { min y rmaestro tienen el mismo talle y el mismo codigo por lo que actualizo}
+              If (rmaestro.stock > min.cantVendida)Then
+                Begin
+                  rmaestro.stock := rmaestro.stock - min.cantVendida;
+                  If (rmaestro.stock < rmaestro.stockMin)Then
+                    writeln(calzadosinstocktxt, rmaestro.descripcion);
 
+                End;
+              minimo(vectoraDetalles, vectorrDetalles, min);
+              If (min.codigo <> rmaestro.codigo)Then
+                break;
+            End;
+          seek(archMaestro, FilePos(archMaestro)-1);
+          write(archMaestro, rmaestro);
+        End;
+    End;
   close(archMaestro);
-  close(archDetalle);
-
+  close(calzadosinstocktxt);
+  For i := 1 To 20 Do
+    Begin
+      close(vectoraDetalles[i]);
+    End;
 End.
